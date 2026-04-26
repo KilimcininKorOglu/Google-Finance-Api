@@ -1,0 +1,9 @@
+.git
+.github
+.claude
+.playwright-mcp
+*.md
+LICENSE
+Dockerfile
+docker-compose.yml
+.dockerignore
