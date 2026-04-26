@@ -24,6 +24,19 @@ Varsayılan port: `8080`. Değiştirmek için:
 PORT=3000 ./google-finance-api
 ```
 
+## Docker
+
+```bash
+docker compose up -d
+```
+
+Durdurma ve loglar:
+
+```bash
+docker compose logs -f
+docker compose down
+```
+
 ## Ticker Formatı
 
 | Tür     | Format        | Örnek            |

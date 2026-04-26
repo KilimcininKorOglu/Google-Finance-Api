@@ -24,6 +24,19 @@ Default port: `8080`. To change:
 PORT=3000 ./google-finance-api
 ```
 
+## Docker
+
+```bash
+docker compose up -d
+```
+
+Logs and shutdown:
+
+```bash
+docker compose logs -f
+docker compose down
+```
+
 ## Ticker Format
 
 | Type    | Format        | Example          |
