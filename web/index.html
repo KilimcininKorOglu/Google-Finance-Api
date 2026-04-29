@@ -772,6 +772,12 @@
       const status = document.getElementById('sse-status');
       let quotes = {};
 
+      function esc(s) {
+        var d = document.createElement('div');
+        d.textContent = String(s);
+        return d.innerHTML;
+      }
+
       function renderGrid() {
         const keys = Object.keys(quotes);
         if (keys.length === 0) return;
@@ -783,10 +789,10 @@
           const sym = q.currency === 'TRY' ? '₺' : q.currency === 'USD' ? '$' : q.currency === 'EUR' ? '€' : '';
           const price = q.type === 'crypto' ? q.price.toLocaleString('en-US', { maximumFractionDigits: 2 }) : q.price.toFixed(2);
           return '<div class="live-card" id="lc-' + t.replace(/[:.]/g, '_') + '">' +
-            '<div class="live-ticker">' + q.ticker + '</div>' +
-            '<div class="live-name">' + q.name + '</div>' +
-            '<div class="live-price">' + sym + price + '</div>' +
-            '<div class="live-change ' + (up ? 'up' : 'down') + '">' + sign + q.change.toFixed(2) + ' (' + sign + q.changePercent.toFixed(2) + '%)</div>' +
+            '<div class="live-ticker">' + esc(q.ticker) + '</div>' +
+            '<div class="live-name">' + esc(q.name) + '</div>' +
+            '<div class="live-price">' + esc(sym + price) + '</div>' +
+            '<div class="live-change ' + (up ? 'up' : 'down') + '">' + esc(sign + q.change.toFixed(2) + ' (' + sign + q.changePercent.toFixed(2) + '%)') + '</div>' +
             '</div>';
         }).join('');
       }
