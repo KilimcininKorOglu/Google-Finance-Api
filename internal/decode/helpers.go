@@ -6,6 +6,9 @@ import (
 )
 
 func unmarshalNested(raw json.RawMessage) ([]any, error) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil, nil
+	}
 	var arr []any
 	if err := json.Unmarshal(raw, &arr); err != nil {
 		return nil, fmt.Errorf("unmarshal: %w", err)
