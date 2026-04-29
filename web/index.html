@@ -1,459 +1,878 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Google Finance API</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #000000;
-  --surface: #0a0a0a;
-  --border: #1a1a1a;
-  --green: #00ff41;
-  --green-muted: #006b1d;
-  --green-faint: #002a0a;
-  --red: #ff2d2d;
-  --red-dim: #661212;
-  --dim: #005f17;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
-  background: var(--bg);
-  color: var(--green);
-  font-size: 13px;
-  line-height: 1.6;
-  min-height: 100vh;
-}
-::selection { background: var(--green); color: var(--bg); }
-a { color: var(--green); text-decoration: none; }
-a:hover { text-decoration: underline; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Finance API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #000000;
+      --surface: #0a0a0a;
+      --border: #1a1a1a;
+      --green: #00ff41;
+      --green-muted: #006b1d;
+      --green-faint: #002a0a;
+      --red: #ff2d2d;
+      --red-dim: #661212;
+      --dim: #005f17;
+    }
 
-.scanline {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none; z-index: 9999;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,255,65,0.015) 2px,
-    rgba(0,255,65,0.015) 4px
-  );
-}
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-.container { max-width: 960px; margin: 0 auto; padding: 24px; }
+    html {
+      scroll-behavior: smooth;
+    }
 
-/* --- HEADER --- */
-.header {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 24px;
-  margin-bottom: 32px;
-}
-.ascii-logo {
-  font-size: 10px;
-  line-height: 1.2;
-  color: var(--green-muted);
-  margin-bottom: 16px;
-  white-space: pre;
-}
-.header-meta { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
-.header-meta span { color: var(--dim); }
-.header-meta .val { color: var(--green); }
-.blink { animation: blink 1s step-end infinite; }
-@keyframes blink { 50% { opacity: 0; } }
+    body {
+      font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
+      background: var(--bg);
+      color: var(--green);
+      font-size: 13px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
 
-/* --- NAV --- */
-.nav {
-  display: flex; gap: 1px; background: var(--border);
-  border: 1px solid var(--border); margin-bottom: 32px;
-}
-.nav a {
-  flex: 1; padding: 10px 12px; background: var(--surface);
-  text-align: center; font-size: 11px; font-weight: 700;
-  letter-spacing: 1.5px; text-transform: uppercase;
-}
-.nav a:hover { background: var(--green-faint); text-decoration: none; }
+    ::selection {
+      background: var(--green);
+      color: var(--bg);
+    }
 
-/* --- LIVE FEED --- */
-.live-section { margin-bottom: 32px; }
-.live-header {
-  font-size: 11px; font-weight: 700; letter-spacing: 2px;
-  margin-bottom: 12px;
-  display: flex; align-items: center; gap: 8px;
-}
-.live-dot {
-  width: 6px; height: 6px; background: var(--green);
-  display: inline-block; animation: pulse 2s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-.live-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1px; background: var(--border); border: 1px solid var(--border);
-}
-.live-card {
-  background: var(--surface); padding: 12px;
-  transition: background 0.15s;
-}
-.live-card.flash { background: var(--green-faint); }
-.live-ticker { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--dim); }
-.live-name { font-size: 11px; margin: 4px 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.live-price { font-size: 20px; font-weight: 700; letter-spacing: -1px; }
-.live-change { font-size: 11px; margin-top: 4px; }
-.live-change.up { color: var(--green); }
-.live-change.down { color: var(--red); }
-.live-loading { color: var(--dim); padding: 24px; text-align: center; border: 1px solid var(--border); }
+    a {
+      color: var(--green);
+      text-decoration: none;
+    }
 
-/* --- SECTION --- */
-.section { margin-bottom: 40px; }
-.section-title {
-  font-size: 11px; font-weight: 700; letter-spacing: 2px;
-  padding-bottom: 8px; border-bottom: 1px solid var(--border);
-  margin-bottom: 16px;
-}
+    a:hover {
+      text-decoration: underline;
+    }
 
-/* --- ABOUT --- */
-.about-text { max-width: 720px; }
-.about-text p { margin-bottom: 12px; }
-.stat-row {
-  display: flex; gap: 1px; background: var(--border);
-  border: 1px solid var(--border); margin-top: 16px;
-}
-.stat-box {
-  flex: 1; background: var(--surface); padding: 16px; text-align: center;
-}
-.stat-val { font-size: 24px; font-weight: 700; letter-spacing: -1px; }
-.stat-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--dim); margin-top: 4px; }
+    .scanline {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 255, 65, 0.015) 2px,
+          rgba(0, 255, 65, 0.015) 4px);
+    }
 
-/* --- ENDPOINTS TABLE --- */
-.ep-table { width: 100%; border-collapse: collapse; }
-.ep-table th {
-  text-align: left; font-size: 10px; font-weight: 700;
-  letter-spacing: 1.5px; padding: 8px 12px;
-  background: var(--surface); border-bottom: 1px solid var(--border);
-}
-.ep-table td {
-  padding: 8px 12px; border-bottom: 1px solid var(--border);
-  font-size: 12px; vertical-align: top;
-}
-.ep-table tr:hover td { background: var(--surface); }
-.method { color: var(--green); font-weight: 700; }
-.ep-path { color: var(--green); }
-.ep-desc { color: var(--dim); font-size: 11px; }
-.tag {
-  display: inline-block; font-size: 9px; font-weight: 700;
-  letter-spacing: 0.5px; padding: 2px 6px;
-  background: var(--green-faint); border: 1px solid var(--green-muted);
-}
-.tag-market { background: var(--green-faint); border-color: var(--green-muted); }
-.tag-live { background: #0a0020; border-color: #4040ff; color: #6060ff; }
-.tag-system { background: #1a1a1a; border-color: #333; color: #666; }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px;
+    }
 
-/* --- EXPLORER --- */
-.explorer { border: 1px solid var(--border); }
-.explorer-bar {
-  display: flex; gap: 1px; background: var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.explorer-bar button {
-  padding: 8px 12px; background: var(--surface); border: none;
-  color: var(--green); font-family: inherit; font-size: 11px;
-  font-weight: 700; cursor: pointer; letter-spacing: 0.5px;
-}
-.explorer-bar button:hover { background: var(--green-faint); }
-.explorer-bar button.active { background: var(--green-faint); border-bottom: 1px solid var(--green); }
-.explorer-input {
-  display: flex; gap: 1px; background: var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.explorer-input input {
-  flex: 1; padding: 10px 12px; background: var(--bg);
-  border: none; color: var(--green); font-family: inherit;
-  font-size: 12px; outline: none;
-}
-.explorer-input input::placeholder { color: var(--dim); }
-.explorer-input button {
-  padding: 10px 16px; background: var(--green-faint);
-  border: none; border-left: 1px solid var(--green-muted);
-  color: var(--green); font-family: inherit; font-size: 12px;
-  font-weight: 700; cursor: pointer;
-}
-.explorer-output {
-  background: var(--bg); padding: 16px;
-  max-height: 400px; overflow: auto;
-  font-size: 12px; white-space: pre-wrap; word-break: break-all;
-}
-.explorer-output .str { color: var(--green); }
-.explorer-output .num { color: #ff8c00; }
-.explorer-output .key { color: #00bfff; }
-.explorer-output .bool { color: #ff6ec7; }
-.explorer-output .null { color: var(--dim); }
-.explorer-status { padding: 8px 12px; background: var(--surface); font-size: 10px; color: var(--dim); }
+    /* --- HEADER --- */
+    .header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
 
-/* --- OPENAPI --- */
-.openapi-link {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 16px; background: var(--green-faint);
-  border: 1px solid var(--green-muted);
-  font-size: 12px; font-weight: 700;
-}
-.openapi-link:hover { background: var(--green-muted); text-decoration: none; }
+    .ascii-logo {
+      font-size: 10px;
+      line-height: 1.2;
+      color: var(--green-muted);
+      margin-bottom: 16px;
+      white-space: pre;
+    }
 
-/* --- FOOTER --- */
-.footer {
-  border-top: 1px solid var(--border);
-  padding-top: 16px; margin-top: 48px;
-  font-size: 10px; color: var(--dim);
-  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-}
+    .header-meta {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
 
-/* --- RESPONSIVE --- */
-@media (max-width: 640px) {
-  .container { padding: 16px; }
-  .ascii-logo { font-size: 7px; }
-  .nav { flex-wrap: wrap; }
-  .nav a { min-width: 80px; }
-  .stat-row { flex-wrap: wrap; }
-  .stat-box { min-width: 120px; }
-  .live-grid { grid-template-columns: 1fr 1fr; }
-}
-</style>
+    .header-meta span {
+      color: var(--dim);
+    }
+
+    .header-meta .val {
+      color: var(--green);
+    }
+
+    .blink {
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    /* --- NAV --- */
+    .nav {
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    .nav a {
+      flex: 1;
+      padding: 10px 12px;
+      background: var(--surface);
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .nav a:hover {
+      background: var(--green-faint);
+      text-decoration: none;
+    }
+
+    /* --- LIVE FEED --- */
+    .live-section {
+      margin-bottom: 32px;
+    }
+
+    .live-header {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      display: inline-block;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+    }
+
+    .live-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .live-card {
+      background: var(--surface);
+      padding: 12px;
+      transition: background 0.15s;
+    }
+
+    .live-card.flash {
+      background: var(--green-faint);
+    }
+
+    .live-ticker {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--dim);
+    }
+
+    .live-name {
+      font-size: 11px;
+      margin: 4px 0 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .live-price {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    .live-change {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .live-change.up {
+      color: var(--green);
+    }
+
+    .live-change.down {
+      color: var(--red);
+    }
+
+    .live-loading {
+      color: var(--dim);
+      padding: 24px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
+    /* --- SECTION --- */
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    /* --- ABOUT --- */
+    .about-text {
+      max-width: 720px;
+    }
+
+    .about-text p {
+      margin-bottom: 12px;
+    }
+
+    .stat-row {
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 16px;
+    }
+
+    .stat-box {
+      flex: 1;
+      background: var(--surface);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--dim);
+      margin-top: 4px;
+    }
+
+    /* --- ENDPOINTS TABLE --- */
+    .ep-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .ep-table th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ep-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      vertical-align: top;
+    }
+
+    .ep-table tr:hover td {
+      background: var(--surface);
+    }
+
+    .method {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .ep-path {
+      color: var(--green);
+    }
+
+    .ep-desc {
+      color: var(--dim);
+      font-size: 11px;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 2px 6px;
+      background: var(--green-faint);
+      border: 1px solid var(--green-muted);
+    }
+
+    .tag-market {
+      background: var(--green-faint);
+      border-color: var(--green-muted);
+    }
+
+    .tag-live {
+      background: #0a0020;
+      border-color: #4040ff;
+      color: #6060ff;
+    }
+
+    .tag-system {
+      background: #1a1a1a;
+      border-color: #333;
+      color: #666;
+    }
+
+    /* --- EXPLORER --- */
+    .explorer {
+      border: 1px solid var(--border);
+    }
+
+    .explorer-bar {
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .explorer-bar button {
+      padding: 8px 12px;
+      background: var(--surface);
+      border: none;
+      color: var(--green);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+    }
+
+    .explorer-bar button:hover {
+      background: var(--green-faint);
+    }
+
+    .explorer-bar button.active {
+      background: var(--green-faint);
+      border-bottom: 1px solid var(--green);
+    }
+
+    .explorer-input {
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .explorer-input input {
+      flex: 1;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: none;
+      color: var(--green);
+      font-family: inherit;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .explorer-input input::placeholder {
+      color: var(--dim);
+    }
+
+    .explorer-input button {
+      padding: 10px 16px;
+      background: var(--green-faint);
+      border: none;
+      border-left: 1px solid var(--green-muted);
+      color: var(--green);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .explorer-output {
+      background: var(--bg);
+      padding: 16px;
+      max-height: 400px;
+      overflow: auto;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .explorer-output .str {
+      color: var(--green);
+    }
+
+    .explorer-output .num {
+      color: #ff8c00;
+    }
+
+    .explorer-output .key {
+      color: #00bfff;
+    }
+
+    .explorer-output .bool {
+      color: #ff6ec7;
+    }
+
+    .explorer-output .null {
+      color: var(--dim);
+    }
+
+    .explorer-status {
+      padding: 8px 12px;
+      background: var(--surface);
+      font-size: 10px;
+      color: var(--dim);
+    }
+
+    /* --- OPENAPI --- */
+    .openapi-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--green-faint);
+      border: 1px solid var(--green-muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .openapi-link:hover {
+      background: var(--green-muted);
+      text-decoration: none;
+    }
+
+    /* --- FOOTER --- */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      margin-top: 48px;
+      font-size: 10px;
+      color: var(--dim);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 640px) {
+      .container {
+        padding: 16px;
+      }
+
+      .ascii-logo {
+        font-size: 7px;
+      }
+
+      .nav {
+        flex-wrap: wrap;
+      }
+
+      .nav a {
+        min-width: 80px;
+      }
+
+      .stat-row {
+        flex-wrap: wrap;
+      }
+
+      .stat-box {
+        min-width: 120px;
+      }
+
+      .live-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
 </head>
-<body>
-<div class="scanline"></div>
-<div class="container">
 
-<header class="header">
-<div class="ascii-logo">
- ██████╗  ██████╗  ██████╗  ██████╗ ██╗     ███████╗    ███████╗██╗███╗   ██╗ █████╗ ███╗   ██╗ ██████╗███████╗
+<body>
+  <div class="scanline"></div>
+  <div class="container">
+
+    <header class="header">
+      <div class="ascii-logo"> ██████╗  ██████╗  ██████╗  ██████╗ ██╗     ███████╗    ███████╗██╗███╗   ██╗ █████╗ ███╗   ██╗ ██████╗███████╗
 ██╔════╝ ██╔═══██╗██╔═══██╗██╔════╝ ██║     ██╔════╝    ██╔════╝██║████╗  ██║██╔══██╗████╗  ██║██╔════╝██╔════╝
 ██║  ███╗██║   ██║██║   ██║██║  ███╗██║     █████╗      █████╗  ██║██╔██╗ ██║███████║██╔██╗ ██║██║     █████╗
 ██║   ██║██║   ██║██║   ██║██║   ██║██║     ██╔══╝      ██╔══╝  ██║██║╚██╗██║██╔══██║██║╚██╗██║██║     ██╔══╝
 ╚██████╔╝╚██████╔╝╚██████╔╝╚██████╔╝███████╗███████╗    ██║     ██║██║ ╚████║██║  ██║██║ ╚████║╚██████╗███████╗
  ╚═════╝  ╚═════╝  ╚═════╝  ╚═════╝ ╚══════╝╚══════╝    ╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
-                                                    ── REST API ──
-</div>
-<div class="header-meta">
-  <span>VERSION <span class="val">1.0.0</span></span>
-  <span>STATUS <span class="val">ONLINE</span></span>
-  <span>DEPS <span class="val">0</span></span>
-  <span>LANG <span class="val">GO</span></span>
-  <span class="val blink">_</span>
-</div>
-</header>
+                                                    ── Unofficial REST API ──</div>
+      <div class="header-meta">
+        <span>VERSION <span class="val">1.0.0</span></span>
+        <span>STATUS <span class="val">ONLINE</span></span>
+        <span>DEPS <span class="val">0</span></span>
+        <span>LANG <span class="val">GO</span></span>
+        <span class="val blink">_</span>
+      </div>
+    </header>
 
-<nav class="nav">
-  <a href="#live">LIVE</a>
-  <a href="#about">ABOUT</a>
-  <a href="#endpoints">ENDPOINTS</a>
-  <a href="#explorer">EXPLORER</a>
-  <a href="#openapi">OPENAPI</a>
-</nav>
+    <nav class="nav">
+      <a href="#live">LIVE</a>
+      <a href="#about">ABOUT</a>
+      <a href="#endpoints">ENDPOINTS</a>
+      <a href="#explorer">EXPLORER</a>
+      <a href="#openapi">OPENAPI</a>
+    </nav>
 
-<section id="live" class="live-section">
-<div class="live-header">
-  <span class="live-dot"></span> LIVE FEED
-  <span style="color:var(--dim);font-weight:400;font-size:10px;margin-left:auto" id="sse-status">connecting...</span>
-</div>
-<div id="live-grid" class="live-loading">
-  initializing stream...<span class="blink">_</span>
-</div>
-</section>
+    <section id="live" class="live-section">
+      <div class="live-header">
+        <span class="live-dot"></span> LIVE FEED
+        <span style="color:var(--dim);font-weight:400;font-size:10px;margin-left:auto"
+          id="sse-status">connecting...</span>
+      </div>
+      <div id="live-grid" class="live-loading">
+        initializing stream...<span class="blink">_</span>
+      </div>
+    </section>
 
-<section id="about" class="section">
-<div class="section-title">ABOUT</div>
-<div class="about-text">
-  <p>Unofficial REST API that wraps Google Finance's internal batchexecute RPC endpoint. No API key required. No external dependencies. One HTTP request returns real-time quotes, company data, financial statements, charts, and news.</p>
-  <p>Supports stocks, ETFs, indices, crypto pairs, and forex across all exchanges Google Finance covers: NASDAQ, NYSE, IST, KRX, TYO, LSE, and more.</p>
-</div>
-<div class="stat-row">
-  <div class="stat-box"><div class="stat-val">13</div><div class="stat-label">ENDPOINTS</div></div>
-  <div class="stat-box"><div class="stat-val">0</div><div class="stat-label">DEPENDENCIES</div></div>
-  <div class="stat-box"><div class="stat-val">19</div><div class="stat-label">RPC METHODS</div></div>
-  <div class="stat-box"><div class="stat-val">~15s</div><div class="stat-label">LIVE INTERVAL</div></div>
-</div>
-</section>
+    <section id="about" class="section">
+      <div class="section-title">ABOUT</div>
+      <div class="about-text">
+        <p>Unofficial REST API that wraps Google Finance's internal batchexecute RPC endpoint. No API key required. No
+          external dependencies. One HTTP request returns real-time quotes, company data, financial statements, charts,
+          and news.</p>
+        <p>Supports stocks, ETFs, indices, crypto pairs, and forex across all exchanges Google Finance covers: NASDAQ,
+          NYSE, IST, KRX, TYO, LSE, and more.</p>
+      </div>
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-val">13</div>
+          <div class="stat-label">ENDPOINTS</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">0</div>
+          <div class="stat-label">DEPENDENCIES</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">19</div>
+          <div class="stat-label">RPC METHODS</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">~15s</div>
+          <div class="stat-label">LIVE INTERVAL</div>
+        </div>
+      </div>
+    </section>
 
-<section id="endpoints" class="section">
-<div class="section-title">ENDPOINTS</div>
-<table class="ep-table">
-<thead>
-<tr><th>METHOD</th><th>PATH</th><th>DESCRIPTION</th><th>TAG</th></tr>
-</thead>
-<tbody>
-<tr><td class="method">GET</td><td class="ep-path">/v1/quote/{ticker}</td><td class="ep-desc">Real-time price, change, market data</td><td><span class="tag">TICKER</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/company/{ticker}</td><td class="ep-desc">Company info, CEO, sector, metrics</td><td><span class="tag">TICKER</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/chart/{ticker}?range=</td><td class="ep-desc">Historical price chart (1D to MAX)</td><td><span class="tag">TICKER</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/news/{ticker}</td><td class="ep-desc">Latest news articles</td><td><span class="tag">TICKER</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/financials/{ticker}?type=</td><td class="ep-desc">Revenue, EPS, P/E (quarterly/annual)</td><td><span class="tag">TICKER</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/related/{ticker}</td><td class="ep-desc">Related stocks</td><td><span class="tag">TICKER</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/full/{ticker}</td><td class="ep-desc">Combined: quote+company+chart+news</td><td><span class="tag">TICKER</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/market/indices</td><td class="ep-desc">Global market indices</td><td><span class="tag tag-market">MARKET</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/market/movers</td><td class="ep-desc">Top gainers, losers, most active</td><td><span class="tag tag-market">MARKET</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/market/trending</td><td class="ep-desc">Currently trending stocks</td><td><span class="tag tag-market">MARKET</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/market/earnings</td><td class="ep-desc">Upcoming earnings calendar</td><td><span class="tag tag-market">MARKET</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/market/headlines</td><td class="ep-desc">Top finance headline</td><td><span class="tag tag-market">MARKET</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/v1/live</td><td class="ep-desc">SSE real-time price stream</td><td><span class="tag tag-live">LIVE</span></td></tr>
-<tr><td class="method">GET</td><td class="ep-path">/healthz</td><td class="ep-desc">Health check</td><td><span class="tag tag-system">SYSTEM</span></td></tr>
-</tbody>
-</table>
-</section>
+    <section id="endpoints" class="section">
+      <div class="section-title">ENDPOINTS</div>
+      <table class="ep-table">
+        <thead>
+          <tr>
+            <th>METHOD</th>
+            <th>PATH</th>
+            <th>DESCRIPTION</th>
+            <th>TAG</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/quote/{ticker}</td>
+            <td class="ep-desc">Real-time price, change, market data</td>
+            <td><span class="tag">TICKER</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/company/{ticker}</td>
+            <td class="ep-desc">Company info, CEO, sector, metrics</td>
+            <td><span class="tag">TICKER</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/chart/{ticker}?range=</td>
+            <td class="ep-desc">Historical price chart (1D to MAX)</td>
+            <td><span class="tag">TICKER</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/news/{ticker}</td>
+            <td class="ep-desc">Latest news articles</td>
+            <td><span class="tag">TICKER</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/financials/{ticker}?type=</td>
+            <td class="ep-desc">Revenue, EPS, P/E (quarterly/annual)</td>
+            <td><span class="tag">TICKER</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/related/{ticker}</td>
+            <td class="ep-desc">Related stocks</td>
+            <td><span class="tag">TICKER</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/full/{ticker}</td>
+            <td class="ep-desc">Combined: quote+company+chart+news</td>
+            <td><span class="tag">TICKER</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/market/indices</td>
+            <td class="ep-desc">Global market indices</td>
+            <td><span class="tag tag-market">MARKET</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/market/movers</td>
+            <td class="ep-desc">Top gainers, losers, most active</td>
+            <td><span class="tag tag-market">MARKET</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/market/trending</td>
+            <td class="ep-desc">Currently trending stocks</td>
+            <td><span class="tag tag-market">MARKET</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/market/earnings</td>
+            <td class="ep-desc">Upcoming earnings calendar</td>
+            <td><span class="tag tag-market">MARKET</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/market/headlines</td>
+            <td class="ep-desc">Top finance headline</td>
+            <td><span class="tag tag-market">MARKET</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/v1/live</td>
+            <td class="ep-desc">SSE real-time price stream</td>
+            <td><span class="tag tag-live">LIVE</span></td>
+          </tr>
+          <tr>
+            <td class="method">GET</td>
+            <td class="ep-path">/healthz</td>
+            <td class="ep-desc">Health check</td>
+            <td><span class="tag tag-system">SYSTEM</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
-<section id="explorer" class="section">
-<div class="section-title">EXPLORER</div>
-<div class="explorer">
-<div class="explorer-bar" id="explorer-tabs">
-  <button class="active" data-path="/v1/quote/GOOGL:NASDAQ">quote</button>
-  <button data-path="/v1/company/AAPL:NASDAQ">company</button>
-  <button data-path="/v1/chart/MSFT:NASDAQ?range=1M">chart</button>
-  <button data-path="/v1/news/TSLA:NASDAQ">news</button>
-  <button data-path="/v1/financials/GOOGL:NASDAQ?type=annual">financials</button>
-  <button data-path="/v1/market/indices">indices</button>
-  <button data-path="/v1/market/trending">trending</button>
-</div>
-<div class="explorer-input">
-  <input type="text" id="explorer-url" value="/v1/quote/GOOGL:NASDAQ" placeholder="/v1/quote/THYAO:IST">
-  <button id="explorer-run">RUN</button>
-</div>
-<div class="explorer-status" id="explorer-status">ready_</div>
-<div class="explorer-output" id="explorer-output">// click RUN or select an endpoint above<span class="blink">_</span></div>
-</div>
-</section>
+    <section id="explorer" class="section">
+      <div class="section-title">EXPLORER</div>
+      <div class="explorer">
+        <div class="explorer-bar" id="explorer-tabs">
+          <button class="active" data-path="/v1/quote/GOOGL:NASDAQ">quote</button>
+          <button data-path="/v1/company/AAPL:NASDAQ">company</button>
+          <button data-path="/v1/chart/MSFT:NASDAQ?range=1M">chart</button>
+          <button data-path="/v1/news/TSLA:NASDAQ">news</button>
+          <button data-path="/v1/financials/GOOGL:NASDAQ?type=annual">financials</button>
+          <button data-path="/v1/market/indices">indices</button>
+          <button data-path="/v1/market/trending">trending</button>
+        </div>
+        <div class="explorer-input">
+          <input type="text" id="explorer-url" value="/v1/quote/GOOGL:NASDAQ" placeholder="/v1/quote/THYAO:IST">
+          <button id="explorer-run">RUN</button>
+        </div>
+        <div class="explorer-status" id="explorer-status">ready_</div>
+        <div class="explorer-output" id="explorer-output">// click RUN or select an endpoint above<span
+            class="blink">_</span></div>
+      </div>
+    </section>
 
-<section id="ticker-format" class="section">
-<div class="section-title">TICKER FORMAT</div>
-<table class="ep-table">
-<thead><tr><th>TYPE</th><th>FORMAT</th><th>EXAMPLE</th></tr></thead>
-<tbody>
-<tr><td>Stock</td><td class="ep-path">SYMBOL:EXCHANGE</td><td>THYAO:IST, GOOGL:NASDAQ</td></tr>
-<tr><td>Index</td><td class="ep-path">.SYMBOL:EXCHANGE</td><td>.DJI:INDEXDJX</td></tr>
-<tr><td>Crypto</td><td class="ep-path">BASE-QUOTE</td><td>BTC-USD, ETH-USD</td></tr>
-<tr><td>Forex</td><td class="ep-path">BASE-QUOTE</td><td>EUR-USD, GBP-USD</td></tr>
-<tr><td>ETF</td><td class="ep-path">SYMBOL:EXCHANGE</td><td>SPY:NYSEARCA</td></tr>
-</tbody>
-</table>
-</section>
+    <section id="ticker-format" class="section">
+      <div class="section-title">TICKER FORMAT</div>
+      <table class="ep-table">
+        <thead>
+          <tr>
+            <th>TYPE</th>
+            <th>FORMAT</th>
+            <th>EXAMPLE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Stock</td>
+            <td class="ep-path">SYMBOL:EXCHANGE</td>
+            <td>THYAO:IST, GOOGL:NASDAQ</td>
+          </tr>
+          <tr>
+            <td>Index</td>
+            <td class="ep-path">.SYMBOL:EXCHANGE</td>
+            <td>.DJI:INDEXDJX</td>
+          </tr>
+          <tr>
+            <td>Crypto</td>
+            <td class="ep-path">BASE-QUOTE</td>
+            <td>BTC-USD, ETH-USD</td>
+          </tr>
+          <tr>
+            <td>Forex</td>
+            <td class="ep-path">BASE-QUOTE</td>
+            <td>EUR-USD, GBP-USD</td>
+          </tr>
+          <tr>
+            <td>ETF</td>
+            <td class="ep-path">SYMBOL:EXCHANGE</td>
+            <td>SPY:NYSEARCA</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
-<section id="openapi" class="section">
-<div class="section-title">OPENAPI SPECIFICATION</div>
-<p style="margin-bottom:16px">OpenAPI 3.1 specification with all endpoints, parameters, and response schemas.</p>
-<a href="/openapi.json" target="_blank" class="openapi-link">[GET] /openapi.json</a>
-</section>
+    <section id="openapi" class="section">
+      <div class="section-title">OPENAPI SPECIFICATION</div>
+      <p style="margin-bottom:16px">OpenAPI 3.1 specification with all endpoints, parameters, and response schemas.</p>
+      <a href="/openapi.json" target="_blank" class="openapi-link">[GET] /openapi.json</a>
+    </section>
 
-<footer class="footer">
-  <span>google-finance-api v1.0.0</span>
-  <span><a href="https://github.com/KilimcininKorOglu/Google-Finance-Api">github.com/KilimcininKorOglu/Google-Finance-Api</a></span>
-  <span>MIT License</span>
-</footer>
+    <footer class="footer">
+      <span>google-finance-api v1.0.0</span>
+      <span><a
+          href="https://github.com/KilimcininKorOglu/Google-Finance-Api">github.com/KilimcininKorOglu/Google-Finance-Api</a></span>
+      <span>MIT License</span>
+    </footer>
 
-</div>
+  </div>
 
-<script>
-(function() {
-  const grid = document.getElementById('live-grid');
-  const status = document.getElementById('sse-status');
-  let quotes = {};
+  <script>
+    (function () {
+      const grid = document.getElementById('live-grid');
+      const status = document.getElementById('sse-status');
+      let quotes = {};
 
-  function renderGrid() {
-    const keys = Object.keys(quotes);
-    if (keys.length === 0) return;
-    grid.className = 'live-grid';
-    grid.innerHTML = keys.map(t => {
-      const q = quotes[t];
-      const up = q.change >= 0;
-      const sign = up ? '+' : '';
-      const sym = q.currency === 'TRY' ? '₺' : q.currency === 'USD' ? '$' : q.currency === 'EUR' ? '€' : '';
-      const price = q.type === 'crypto' ? q.price.toLocaleString('en-US', {maximumFractionDigits:2}) : q.price.toFixed(2);
-      return '<div class="live-card" id="lc-'+t.replace(/[:.]/g,'_')+'">' +
-        '<div class="live-ticker">'+q.ticker+'</div>' +
-        '<div class="live-name">'+q.name+'</div>' +
-        '<div class="live-price">'+sym+price+'</div>' +
-        '<div class="live-change '+(up?'up':'down')+'">'+sign+q.change.toFixed(2)+' ('+sign+q.changePercent.toFixed(2)+'%)</div>' +
-      '</div>';
-    }).join('');
-  }
-
-  function flash(ticker) {
-    const el = document.getElementById('lc-'+ticker.replace(/[:.]/g,'_'));
-    if (!el) return;
-    el.classList.add('flash');
-    setTimeout(() => el.classList.remove('flash'), 600);
-  }
-
-  function connectSSE() {
-    status.textContent = 'connecting...';
-    const es = new EventSource('/v1/live');
-    es.onopen = function() { status.textContent = 'connected █'; };
-    es.onmessage = function(e) {
-      try {
-        const data = JSON.parse(e.data);
-        data.forEach(function(q) {
-          quotes[q.ticker] = q;
-          flash(q.ticker);
-        });
-        renderGrid();
-        status.textContent = 'live █ ' + new Date().toLocaleTimeString();
-      } catch(err) {}
-    };
-    es.onerror = function() {
-      status.textContent = 'reconnecting...';
-      es.close();
-      setTimeout(connectSSE, 5000);
-    };
-  }
-  connectSSE();
-
-  // Explorer
-  const tabs = document.getElementById('explorer-tabs');
-  const urlInput = document.getElementById('explorer-url');
-  const output = document.getElementById('explorer-output');
-  const statusEl = document.getElementById('explorer-status');
-
-  tabs.addEventListener('click', function(e) {
-    if (e.target.tagName !== 'BUTTON') return;
-    tabs.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-    urlInput.value = e.target.dataset.path;
-  });
-
-  function syntaxHL(json) {
-    return json
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"([^"]+)":/g, '<span class="key">"$1"</span>:')
-      .replace(/: "([^"]*)"/g, ': <span class="str">"$1"</span>')
-      .replace(/: (-?\d+\.?\d*)/g, ': <span class="num">$1</span>')
-      .replace(/: (true|false)/g, ': <span class="bool">$1</span>')
-      .replace(/: (null)/g, ': <span class="null">$1</span>');
-  }
-
-  async function runExplorer() {
-    const path = urlInput.value.trim();
-    if (!path) return;
-    statusEl.textContent = 'GET ' + path + '...';
-    output.textContent = '';
-    const t0 = performance.now();
-    try {
-      const res = await fetch(path);
-      const ms = Math.round(performance.now() - t0);
-      const text = await res.text();
-      statusEl.textContent = res.status + ' ' + res.statusText + ' | ' + ms + 'ms | ' + text.length + ' bytes';
-      try {
-        const pretty = JSON.stringify(JSON.parse(text), null, 2);
-        output.innerHTML = syntaxHL(pretty);
-      } catch(e2) {
-        output.textContent = text;
+      function renderGrid() {
+        const keys = Object.keys(quotes);
+        if (keys.length === 0) return;
+        grid.className = 'live-grid';
+        grid.innerHTML = keys.map(t => {
+          const q = quotes[t];
+          const up = q.change >= 0;
+          const sign = up ? '+' : '';
+          const sym = q.currency === 'TRY' ? '₺' : q.currency === 'USD' ? '$' : q.currency === 'EUR' ? '€' : '';
+          const price = q.type === 'crypto' ? q.price.toLocaleString('en-US', { maximumFractionDigits: 2 }) : q.price.toFixed(2);
+          return '<div class="live-card" id="lc-' + t.replace(/[:.]/g, '_') + '">' +
+            '<div class="live-ticker">' + q.ticker + '</div>' +
+            '<div class="live-name">' + q.name + '</div>' +
+            '<div class="live-price">' + sym + price + '</div>' +
+            '<div class="live-change ' + (up ? 'up' : 'down') + '">' + sign + q.change.toFixed(2) + ' (' + sign + q.changePercent.toFixed(2) + '%)</div>' +
+            '</div>';
+        }).join('');
       }
-    } catch(err) {
-      statusEl.textContent = 'error: ' + err.message;
-      output.textContent = err.message;
-    }
-  }
 
-  document.getElementById('explorer-run').addEventListener('click', runExplorer);
-  urlInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') runExplorer(); });
-})();
-</script>
+      function flash(ticker) {
+        const el = document.getElementById('lc-' + ticker.replace(/[:.]/g, '_'));
+        if (!el) return;
+        el.classList.add('flash');
+        setTimeout(() => el.classList.remove('flash'), 600);
+      }
+
+      function connectSSE() {
+        status.textContent = 'connecting...';
+        const es = new EventSource('/v1/live');
+        es.onopen = function () { status.textContent = 'connected █'; };
+        es.onmessage = function (e) {
+          try {
+            const data = JSON.parse(e.data);
+            data.forEach(function (q) {
+              quotes[q.ticker] = q;
+              flash(q.ticker);
+            });
+            renderGrid();
+            status.textContent = 'live █ ' + new Date().toLocaleTimeString();
+          } catch (err) { }
+        };
+        es.onerror = function () {
+          status.textContent = 'reconnecting...';
+          es.close();
+          setTimeout(connectSSE, 5000);
+        };
+      }
+      connectSSE();
+
+      // Explorer
+      const tabs = document.getElementById('explorer-tabs');
+      const urlInput = document.getElementById('explorer-url');
+      const output = document.getElementById('explorer-output');
+      const statusEl = document.getElementById('explorer-status');
+
+      tabs.addEventListener('click', function (e) {
+        if (e.target.tagName !== 'BUTTON') return;
+        tabs.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        urlInput.value = e.target.dataset.path;
+      });
+
+      function syntaxHL(json) {
+        return json
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"([^"]+)":/g, '<span class="key">"$1"</span>:')
+          .replace(/: "([^"]*)"/g, ': <span class="str">"$1"</span>')
+          .replace(/: (-?\d+\.?\d*)/g, ': <span class="num">$1</span>')
+          .replace(/: (true|false)/g, ': <span class="bool">$1</span>')
+          .replace(/: (null)/g, ': <span class="null">$1</span>');
+      }
+
+      async function runExplorer() {
+        const path = urlInput.value.trim();
+        if (!path) return;
+        statusEl.textContent = 'GET ' + path + '...';
+        output.textContent = '';
+        const t0 = performance.now();
+        try {
+          const res = await fetch(path);
+          const ms = Math.round(performance.now() - t0);
+          const text = await res.text();
+          statusEl.textContent = res.status + ' ' + res.statusText + ' | ' + ms + 'ms | ' + text.length + ' bytes';
+          try {
+            const pretty = JSON.stringify(JSON.parse(text), null, 2);
+            output.innerHTML = syntaxHL(pretty);
+          } catch (e2) {
+            output.textContent = text;
+          }
+        } catch (err) {
+          statusEl.textContent = 'error: ' + err.message;
+          output.textContent = err.message;
+        }
+      }
+
+      document.getElementById('explorer-run').addEventListener('click', runExplorer);
+      urlInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') runExplorer(); });
+    })();
+  </script>
 </body>
+
 </html>
