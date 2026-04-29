@@ -6,6 +6,12 @@ API anahtarı gerektirmez. Tek bir HTTP isteği ile fiyat, şirket bilgisi, graf
 
 [English README](README.en.md)
 
+## Demo
+
+**https://finance.hermestech.uk**
+
+Hacker temalı terminal arayüzü ile canlı fiyat akışı, interaktif API explorer ve OpenAPI dokümantasyonu.
+
 ## Kurulum
 
 ```bash
@@ -71,10 +77,20 @@ GET /v1/market/earnings
 GET /v1/market/headlines
 ```
 
+### Canlı Veri
+
+```
+GET /v1/live              SSE canlı fiyat akışı (15 saniye aralık)
+GET /v1/live/snapshot     Anlık fiyat JSON
+```
+
+Canlı akış 8 ticker izler: GOOGL, AAPL, MSFT, BTC-USD, THYAO:IST, USD-TRY, EUR-TRY, EUR-USD.
+
 ### Sistem
 
 ```
-GET /healthz
+GET /healthz              Sağlık kontrolü + versiyon bilgisi
+GET /openapi.json         OpenAPI 3.1 spesifikasyonu
 ```
 
 ## Örnekler
@@ -82,7 +98,7 @@ GET /healthz
 Hisse fiyatı:
 
 ```bash
-curl http://localhost:8080/v1/quote/THYAO:IST
+curl https://finance.hermestech.uk/v1/quote/THYAO:IST
 ```
 
 ```json
@@ -103,7 +119,7 @@ curl http://localhost:8080/v1/quote/THYAO:IST
 Şirket bilgisi:
 
 ```bash
-curl http://localhost:8080/v1/company/GARAN:IST
+curl https://finance.hermestech.uk/v1/company/GARAN:IST
 ```
 
 ```json
@@ -126,13 +142,13 @@ curl http://localhost:8080/v1/company/GARAN:IST
 Tam veri (fiyat + şirket + grafik + haber):
 
 ```bash
-curl http://localhost:8080/v1/full/ASELS:IST?range=1Y
+curl https://finance.hermestech.uk/v1/full/ASELS:IST?range=1Y
 ```
 
 Finansal tablolar (yıllık):
 
 ```bash
-curl http://localhost:8080/v1/financials/KCHOL:IST?type=annual
+curl https://finance.hermestech.uk/v1/financials/KCHOL:IST?type=annual
 ```
 
 ```json
@@ -152,13 +168,13 @@ curl http://localhost:8080/v1/financials/KCHOL:IST?type=annual
 Kripto:
 
 ```bash
-curl http://localhost:8080/v1/quote/BTC-USD
+curl https://finance.hermestech.uk/v1/quote/BTC-USD
 ```
 
 Piyasa endeksleri:
 
 ```bash
-curl http://localhost:8080/v1/market/indices
+curl https://finance.hermestech.uk/v1/market/indices
 ```
 
 ## Grafik Aralıkları
@@ -177,14 +193,21 @@ curl http://localhost:8080/v1/market/indices
 ## Yapı
 
 ```
-cmd/server/main.go          Giriş noktası, graceful shutdown
-internal/gfrpc/client.go    Google Finance RPC istemcisi
-internal/gfrpc/codec.go     batchexecute istek/yanıt kodlayıcı
-internal/gfrpc/tuple.go     Ticker tuple dönüştürme
-internal/gfrpc/methods.go   RPC metot tanımları
-internal/decode/            Pozisyonel dizi çözücüleri
-internal/api/               HTTP sunucu, handler, middleware
-internal/models/            Veri modelleri
+cmd/server/main.go              Giriş noktası, graceful shutdown
+internal/gfrpc/client.go        Google Finance RPC istemcisi
+internal/gfrpc/codec.go         batchexecute istek/yanıt kodlayıcı
+internal/gfrpc/tuple.go         Ticker tuple dönüştürme
+internal/gfrpc/methods.go       RPC metot tanımları
+internal/decode/                Pozisyonel dizi çözücüleri
+internal/api/server.go          Route tanımları (Go 1.22+ method patterns)
+internal/api/handlers.go        Ticker bazlı handler'lar
+internal/api/handlers_market.go Piyasa endpoint handler'ları
+internal/api/handlers_sse.go    SSE canlı fiyat akışı
+internal/api/handlers_web.go    Ana sayfa ve OpenAPI servisi
+internal/api/middleware.go      CORS, logging, recovery
+internal/models/                Veri modelleri
+web/index.html                  Terminal temalı ana sayfa
+web/openapi.json                OpenAPI 3.1 spesifikasyonu
 ```
 
 ## Lisans

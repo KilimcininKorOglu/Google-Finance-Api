@@ -6,6 +6,12 @@ No API key required. Fetches price quotes, company info, charts, news, financial
 
 [Turkce README](README.md)
 
+## Demo
+
+**https://finance.hermestech.uk**
+
+Hacker-themed terminal UI with live price feed, interactive API explorer, and OpenAPI documentation.
+
 ## Installation
 
 ```bash
@@ -39,13 +45,13 @@ docker compose down
 
 ## Ticker Format
 
-| Type    | Format        | Example          |
-|---------|---------------|------------------|
-| Stock   | SYMBOL:EXCHANGE | GOOGL:NASDAQ   |
-| Index   | .SYMBOL:EXCHANGE | .DJI:INDEXDJX |
-| Crypto  | BASE-QUOTE    | BTC-USD          |
-| Forex   | BASE-QUOTE    | EUR-USD          |
-| ETF     | SYMBOL:EXCHANGE | SPY:NYSEARCA   |
+| Type   | Format           | Example          |
+|--------|------------------|------------------|
+| Stock  | SYMBOL:EXCHANGE  | GOOGL:NASDAQ     |
+| Index  | .SYMBOL:EXCHANGE | .DJI:INDEXDJX    |
+| Crypto | BASE-QUOTE       | BTC-USD          |
+| Forex  | BASE-QUOTE       | EUR-USD          |
+| ETF    | SYMBOL:EXCHANGE  | SPY:NYSEARCA     |
 
 ## API Endpoints
 
@@ -71,10 +77,20 @@ GET /v1/market/earnings
 GET /v1/market/headlines
 ```
 
+### Live Data
+
+```
+GET /v1/live              SSE live price stream (15 second interval)
+GET /v1/live/snapshot     Instant price JSON
+```
+
+Live feed tracks 8 tickers: GOOGL, AAPL, MSFT, BTC-USD, THYAO:IST, USD-TRY, EUR-TRY, EUR-USD.
+
 ### System
 
 ```
-GET /healthz
+GET /healthz              Health check + version info
+GET /openapi.json         OpenAPI 3.1 specification
 ```
 
 ## Examples
@@ -82,7 +98,7 @@ GET /healthz
 Stock quote:
 
 ```bash
-curl http://localhost:8080/v1/quote/GOOGL:NASDAQ
+curl https://finance.hermestech.uk/v1/quote/GOOGL:NASDAQ
 ```
 
 ```json
@@ -108,7 +124,7 @@ curl http://localhost:8080/v1/quote/GOOGL:NASDAQ
 Company info:
 
 ```bash
-curl http://localhost:8080/v1/company/AAPL:NASDAQ
+curl https://finance.hermestech.uk/v1/company/AAPL:NASDAQ
 ```
 
 ```json
@@ -131,13 +147,13 @@ curl http://localhost:8080/v1/company/AAPL:NASDAQ
 Full data (quote + company + chart + news):
 
 ```bash
-curl http://localhost:8080/v1/full/AAPL:NASDAQ?range=1Y
+curl https://finance.hermestech.uk/v1/full/AAPL:NASDAQ?range=1Y
 ```
 
 Financial statements (annual):
 
 ```bash
-curl http://localhost:8080/v1/financials/MSFT:NASDAQ?type=annual
+curl https://finance.hermestech.uk/v1/financials/MSFT:NASDAQ?type=annual
 ```
 
 ```json
@@ -157,7 +173,7 @@ curl http://localhost:8080/v1/financials/MSFT:NASDAQ?type=annual
 Crypto:
 
 ```bash
-curl http://localhost:8080/v1/quote/BTC-USD
+curl https://finance.hermestech.uk/v1/quote/BTC-USD
 ```
 
 ```json
@@ -165,7 +181,6 @@ curl http://localhost:8080/v1/quote/BTC-USD
   "ticker": "BTC-USD",
   "name": "Bitcoin (BTC / USD)",
   "type": "crypto",
-  "currency": "",
   "price": 74039.75,
   "change": -142.28,
   "changePercent": -0.19,
@@ -176,7 +191,7 @@ curl http://localhost:8080/v1/quote/BTC-USD
 Market indices:
 
 ```bash
-curl http://localhost:8080/v1/market/indices
+curl https://finance.hermestech.uk/v1/market/indices
 ```
 
 ## Chart Ranges
@@ -195,14 +210,21 @@ curl http://localhost:8080/v1/market/indices
 ## Project Structure
 
 ```
-cmd/server/main.go          Entry point, graceful shutdown
-internal/gfrpc/client.go    Google Finance RPC client
-internal/gfrpc/codec.go     batchexecute request/response codec
-internal/gfrpc/tuple.go     Ticker tuple conversion
-internal/gfrpc/methods.go   RPC method definitions
-internal/decode/            Positional array decoders
-internal/api/               HTTP server, handlers, middleware
-internal/models/            Data models
+cmd/server/main.go              Entry point, graceful shutdown
+internal/gfrpc/client.go        Google Finance RPC client
+internal/gfrpc/codec.go         batchexecute request/response codec
+internal/gfrpc/tuple.go         Ticker tuple conversion
+internal/gfrpc/methods.go       RPC method definitions
+internal/decode/                Positional array decoders
+internal/api/server.go          Route registration (Go 1.22+ method patterns)
+internal/api/handlers.go        Ticker-based handlers
+internal/api/handlers_market.go Market endpoint handlers
+internal/api/handlers_sse.go    SSE live price stream
+internal/api/handlers_web.go    Landing page and OpenAPI serving
+internal/api/middleware.go      CORS, logging, recovery
+internal/models/                Data models
+web/index.html                  Terminal-themed landing page
+web/openapi.json                OpenAPI 3.1 specification
 ```
 
 ## License
