@@ -4,6 +4,7 @@ WORKDIR /src
 COPY go.mod ./
 COPY cmd/ cmd/
 COPY internal/ internal/
+COPY web/ web/
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /bin/google-finance-api ./cmd/server
 
