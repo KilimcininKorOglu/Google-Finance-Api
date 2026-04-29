@@ -1,17 +1,28 @@
 package api
 
 import (
+	"bytes"
 	"io/fs"
 	"net/http"
+	"os"
 )
 
+const baseURLPlaceholder = "https://finance.hermestech.uk"
+
 func webHandler(content fs.FS) http.HandlerFunc {
+	raw, _ := fs.ReadFile(content, "index.html")
+	envBase := os.Getenv("BASE_URL")
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := fs.ReadFile(content, "index.html")
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "page not found")
-			return
+		baseURL := envBase
+		if baseURL == "" {
+			scheme := "https"
+			if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+				scheme = proto
+			}
+			baseURL = scheme + "://" + r.Host
 		}
+		data := bytes.ReplaceAll(raw, []byte(baseURLPlaceholder), []byte(baseURL))
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Link", `</openapi.json>; rel="describedby"; type="application/json"`)
 		w.Write(data)
