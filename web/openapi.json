@@ -1,0 +1,336 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Google Finance API",
+    "description": "Unofficial REST API wrapping Google Finance's internal RPC endpoint. Zero API key required.",
+    "version": "1.0.0",
+    "license": { "name": "MIT", "url": "https://github.com/KilimcininKorOglu/Google-Finance-Api/blob/main/LICENSE" }
+  },
+  "servers": [
+    { "url": "/", "description": "Current host" }
+  ],
+  "paths": {
+    "/v1/quote/{ticker}": {
+      "get": {
+        "summary": "Get quote",
+        "description": "Real-time price, change, and market data for a ticker.",
+        "operationId": "getQuote",
+        "tags": ["Ticker"],
+        "parameters": [{ "$ref": "#/components/parameters/ticker" }],
+        "responses": {
+          "200": { "description": "Quote data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Quote" } } } }
+        }
+      }
+    },
+    "/v1/company/{ticker}": {
+      "get": {
+        "summary": "Get company info",
+        "description": "Company description, CEO, market cap, sector, and key metrics.",
+        "operationId": "getCompany",
+        "tags": ["Ticker"],
+        "parameters": [{ "$ref": "#/components/parameters/ticker" }],
+        "responses": {
+          "200": { "description": "Company info", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CompanyInfo" } } } }
+        }
+      }
+    },
+    "/v1/chart/{ticker}": {
+      "get": {
+        "summary": "Get price chart",
+        "description": "Historical price and volume data points.",
+        "operationId": "getChart",
+        "tags": ["Ticker"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ticker" },
+          { "name": "range", "in": "query", "schema": { "type": "string", "enum": ["1D","5D","1M","6M","YTD","1Y","5Y","MAX"], "default": "1M" } }
+        ],
+        "responses": {
+          "200": { "description": "Chart data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ChartData" } } } }
+        }
+      }
+    },
+    "/v1/news/{ticker}": {
+      "get": {
+        "summary": "Get news",
+        "description": "Latest news articles related to the ticker.",
+        "operationId": "getNews",
+        "tags": ["Ticker"],
+        "parameters": [{ "$ref": "#/components/parameters/ticker" }],
+        "responses": {
+          "200": { "description": "News items", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/NewsItem" } } } } }
+        }
+      }
+    },
+    "/v1/financials/{ticker}": {
+      "get": {
+        "summary": "Get financials",
+        "description": "Quarterly and annual financial data: revenue, net income, EPS, P/E, and more.",
+        "operationId": "getFinancials",
+        "tags": ["Ticker"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ticker" },
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["quarterly","annual","all"], "default": "all" } }
+        ],
+        "responses": {
+          "200": { "description": "Financial periods", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/FinancialPeriod" } } } } }
+        }
+      }
+    },
+    "/v1/related/{ticker}": {
+      "get": {
+        "summary": "Get related stocks",
+        "description": "Stocks related to the given ticker.",
+        "operationId": "getRelated",
+        "tags": ["Ticker"],
+        "parameters": [{ "$ref": "#/components/parameters/ticker" }],
+        "responses": {
+          "200": { "description": "Related stocks", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RelatedStock" } } } } }
+        }
+      }
+    },
+    "/v1/full/{ticker}": {
+      "get": {
+        "summary": "Get full data",
+        "description": "Combined quote + company + chart + news in a single request.",
+        "operationId": "getFull",
+        "tags": ["Ticker"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ticker" },
+          { "name": "range", "in": "query", "schema": { "type": "string", "default": "1M" } }
+        ],
+        "responses": {
+          "200": { "description": "Full quote data", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FullQuote" } } } }
+        }
+      }
+    },
+    "/v1/market/indices": {
+      "get": {
+        "summary": "Market indices",
+        "description": "Global market indices: Dow, S&P 500, NASDAQ, DAX, Nikkei, etc.",
+        "operationId": "getMarketIndices",
+        "tags": ["Market"],
+        "responses": {
+          "200": { "description": "Index list", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/MarketIndex" } } } } }
+        }
+      }
+    },
+    "/v1/market/movers": {
+      "get": {
+        "summary": "Market movers",
+        "description": "Top gainers, losers, and most active stocks.",
+        "operationId": "getMarketMovers",
+        "tags": ["Market"],
+        "parameters": [
+          { "name": "category", "in": "query", "schema": { "type": "string", "default": "most-active" } },
+          { "name": "count", "in": "query", "schema": { "type": "integer", "default": 10 } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer", "default": 0 } }
+        ],
+        "responses": {
+          "200": { "description": "Mover list", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/MarketMover" } } } } }
+        }
+      }
+    },
+    "/v1/market/trending": {
+      "get": {
+        "summary": "Trending stocks",
+        "description": "Currently trending stocks on Google Finance.",
+        "operationId": "getTrending",
+        "tags": ["Market"],
+        "responses": {
+          "200": { "description": "Trending list", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/MarketMover" } } } } }
+        }
+      }
+    },
+    "/v1/market/earnings": {
+      "get": {
+        "summary": "Earnings calendar",
+        "description": "Upcoming earnings announcements.",
+        "operationId": "getEarnings",
+        "tags": ["Market"],
+        "responses": {
+          "200": { "description": "Earnings events", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/EarningsEvent" } } } } }
+        }
+      }
+    },
+    "/v1/market/headlines": {
+      "get": {
+        "summary": "Top headline",
+        "description": "Current top finance headline.",
+        "operationId": "getHeadlines",
+        "tags": ["Market"],
+        "responses": {
+          "200": { "description": "Headline", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Headline" } } } }
+        }
+      }
+    },
+    "/v1/live": {
+      "get": {
+        "summary": "Live price stream (SSE)",
+        "description": "Server-Sent Events stream of real-time price updates for selected tickers. Updates every 15 seconds.",
+        "operationId": "liveStream",
+        "tags": ["Live"],
+        "responses": {
+          "200": { "description": "SSE event stream", "content": { "text/event-stream": {} } }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "summary": "Health check",
+        "operationId": "healthz",
+        "tags": ["System"],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string" } } } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ticker": {
+        "name": "ticker",
+        "in": "path",
+        "required": true,
+        "description": "Ticker in format SYMBOL:EXCHANGE (stocks), BASE-QUOTE (crypto/fx). Examples: GOOGL:NASDAQ, BTC-USD, THYAO:IST",
+        "schema": { "type": "string" }
+      }
+    },
+    "schemas": {
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "ticker": { "type": "string" },
+          "exchange": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["stock","index","crypto","etf","unknown"] },
+          "currency": { "type": "string" },
+          "timezone": { "type": "string" },
+          "price": { "type": "number" },
+          "change": { "type": "number" },
+          "changePercent": { "type": "number" },
+          "previousClose": { "type": "number" },
+          "afterHours": { "$ref": "#/components/schemas/AfterHours" }
+        }
+      },
+      "AfterHours": {
+        "type": "object",
+        "properties": {
+          "price": { "type": "number" },
+          "change": { "type": "number" },
+          "changePercent": { "type": "number" }
+        }
+      },
+      "CompanyInfo": {
+        "type": "object",
+        "properties": {
+          "description": { "type": "string" },
+          "ceo": { "type": "string" },
+          "employees": { "type": "integer" },
+          "marketCap": { "type": "number" },
+          "open": { "type": "number" },
+          "high": { "type": "number" },
+          "low": { "type": "number" },
+          "fiftyTwoWeekHigh": { "type": "number" },
+          "fiftyTwoWeekLow": { "type": "number" },
+          "peRatio": { "type": "number" },
+          "volume": { "type": "integer" },
+          "sector": { "type": "string" }
+        }
+      },
+      "ChartData": {
+        "type": "object",
+        "properties": {
+          "previousClose": { "type": "number" },
+          "points": { "type": "array", "items": { "$ref": "#/components/schemas/ChartPoint" } }
+        }
+      },
+      "ChartPoint": {
+        "type": "object",
+        "properties": {
+          "date": { "type": "string" },
+          "price": { "type": "number" },
+          "volume": { "type": "integer" }
+        }
+      },
+      "NewsItem": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "source": { "type": "string" },
+          "url": { "type": "string" },
+          "timestamp": { "type": "integer" }
+        }
+      },
+      "FinancialPeriod": {
+        "type": "object",
+        "properties": {
+          "fiscalEnd": { "type": "string" },
+          "isAnnual": { "type": "boolean" },
+          "currency": { "type": "string" },
+          "revenue": { "type": "number" },
+          "netIncome": { "type": "number" },
+          "eps": { "type": "number" },
+          "epsDiluted": { "type": "number" },
+          "operatingMargin": { "type": "number" },
+          "peRatio": { "type": "number" }
+        }
+      },
+      "RelatedStock": {
+        "type": "object",
+        "properties": {
+          "ticker": { "type": "string" },
+          "name": { "type": "string" },
+          "price": { "type": "number" },
+          "change": { "type": "number" },
+          "changePercent": { "type": "number" }
+        }
+      },
+      "MarketIndex": {
+        "type": "object",
+        "properties": {
+          "ticker": { "type": "string" },
+          "name": { "type": "string" },
+          "price": { "type": "number" },
+          "change": { "type": "number" },
+          "changePercent": { "type": "number" }
+        }
+      },
+      "MarketMover": {
+        "type": "object",
+        "properties": {
+          "ticker": { "type": "string" },
+          "name": { "type": "string" },
+          "price": { "type": "number" },
+          "change": { "type": "number" },
+          "changePercent": { "type": "number" }
+        }
+      },
+      "EarningsEvent": {
+        "type": "object",
+        "properties": {
+          "ticker": { "type": "string" },
+          "name": { "type": "string" },
+          "date": { "type": "string" },
+          "exchange": { "type": "string" }
+        }
+      },
+      "Headline": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "url": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      },
+      "FullQuote": {
+        "type": "object",
+        "properties": {
+          "quote": { "$ref": "#/components/schemas/Quote" },
+          "company": { "$ref": "#/components/schemas/CompanyInfo" },
+          "chart": { "$ref": "#/components/schemas/ChartData" },
+          "news": { "type": "array", "items": { "$ref": "#/components/schemas/NewsItem" } }
+        }
+      }
+    }
+  }
+}

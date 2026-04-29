@@ -1,14 +1,18 @@
 package api
 
 import (
+	"io/fs"
 	"net/http"
 
 	"github.com/kilimcininkoroglu/google-finance-api/internal/gfrpc"
 )
 
-func NewServer(client *gfrpc.Client, port string) *http.Server {
+func NewServer(client *gfrpc.Client, port string, webFS fs.FS) *http.Server {
 	h := &handlers{client: client}
 	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /{$}", webHandler(webFS))
+	mux.HandleFunc("GET /openapi.json", openAPIHandler(webFS))
 
 	mux.HandleFunc("GET /v1/quote/{ticker}", h.getQuote)
 	mux.HandleFunc("GET /v1/company/{ticker}", h.getCompany)
@@ -23,6 +27,9 @@ func NewServer(client *gfrpc.Client, port string) *http.Server {
 	mux.HandleFunc("GET /v1/market/trending", h.getTrending)
 	mux.HandleFunc("GET /v1/market/earnings", h.getEarnings)
 	mux.HandleFunc("GET /v1/market/headlines", h.getHeadlines)
+
+	mux.HandleFunc("GET /v1/live", h.liveStream)
+	mux.HandleFunc("GET /v1/live/snapshot", h.sseQuotes)
 
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})

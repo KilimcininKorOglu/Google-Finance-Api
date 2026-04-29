@@ -11,6 +11,7 @@ import (
 
 	"github.com/kilimcininkoroglu/google-finance-api/internal/api"
 	"github.com/kilimcininkoroglu/google-finance-api/internal/gfrpc"
+	"github.com/kilimcininkoroglu/google-finance-api/web"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	}
 
 	client := gfrpc.NewClient()
-	srv := api.NewServer(client, port)
+	srv := api.NewServer(client, port, web.Content)
 
 	go func() {
 		log.Printf("server starting on :%s", port)
