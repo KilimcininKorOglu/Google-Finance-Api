@@ -1,0 +1,31 @@
+# Google Finance API
+
+> Unofficial REST API wrapping Google Finance's internal batchexecute RPC endpoint. No API key required. Zero external dependencies. Open source (MIT).
+
+## Endpoints
+
+- GET /v1/quote/{ticker} — Real-time price, change, market data
+- GET /v1/company/{ticker} — Company info, CEO, sector, key metrics
+- GET /v1/chart/{ticker}?range=1D|5D|1M|6M|YTD|1Y|5Y|MAX — Historical price chart
+- GET /v1/news/{ticker} — Latest news articles
+- GET /v1/financials/{ticker}?type=quarterly|annual — Revenue, EPS, P/E ratios
+- GET /v1/related/{ticker} — Related stocks
+- GET /v1/full/{ticker} — Combined quote+company+chart+news
+- GET /v1/market/indices — Global market indices
+- GET /v1/market/movers?category=most-active|gainers|losers — Top movers
+- GET /v1/market/trending — Currently trending stocks
+- GET /v1/market/earnings — Upcoming earnings calendar
+- GET /v1/market/headlines — Top finance headline
+- GET /v1/live — SSE real-time price stream (8 tickers, 15s interval)
+
+## Ticker Formats
+
+- Stock: SYMBOL:EXCHANGE (e.g., GOOGL:NASDAQ, THYAO:IST)
+- Crypto: BASE-QUOTE (e.g., BTC-USD)
+- Forex: BASE-QUOTE (e.g., EUR-USD)
+
+## Links
+
+- API: https://finance.hermestech.uk
+- OpenAPI Spec: https://finance.hermestech.uk/openapi.json
+- GitHub: https://github.com/KilimcininKorOglu/Google-Finance-Api

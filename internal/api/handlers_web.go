@@ -13,6 +13,19 @@ func webHandler(content fs.FS) http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Link", `</openapi.json>; rel="describedby"; type="application/json"`)
+		w.Write(data)
+	}
+}
+
+func staticFileHandler(content fs.FS, filename, contentType string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := fs.ReadFile(content, filename)
+		if err != nil {
+			writeError(w, http.StatusNotFound, "not found")
+			return
+		}
+		w.Header().Set("Content-Type", contentType)
 		w.Write(data)
 	}
 }

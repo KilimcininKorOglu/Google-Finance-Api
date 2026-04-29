@@ -19,6 +19,9 @@ func NewServer(ctx context.Context, client *gfrpc.Client, port string, webFS fs.
 
 	mux.HandleFunc("GET /{$}", webHandler(webFS))
 	mux.HandleFunc("GET /openapi.json", openAPIHandler(webFS))
+	mux.HandleFunc("GET /robots.txt", staticFileHandler(webFS, "robots.txt", "text/plain; charset=utf-8"))
+	mux.HandleFunc("GET /sitemap.xml", staticFileHandler(webFS, "sitemap.xml", "application/xml; charset=utf-8"))
+	mux.HandleFunc("GET /llms.txt", staticFileHandler(webFS, "llms.txt", "text/plain; charset=utf-8"))
 
 	mux.HandleFunc("GET /v1/quote/{ticker}", h.getQuote)
 	mux.HandleFunc("GET /v1/company/{ticker}", h.getCompany)
