@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 )
+
+const maxResponseSize = 10 << 20 // 10 MB
 
 const batchExecuteURL = "https://www.google.com/finance/_/GoogleFinanceUi/data/batchexecute"
 
@@ -42,7 +45,8 @@ func (c *Client) Execute(ctx context.Context, sourcePath string, requests []RPCR
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, strings.NewReader(body))
 	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
+		log.Printf("gfrpc: create request error: %v", err)
+		return nil, fmt.Errorf("upstream service unavailable")
 	}
 
 	for k, v := range defaultHeaders {
@@ -51,22 +55,26 @@ func (c *Client) Execute(ctx context.Context, sourcePath string, requests []RPCR
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("executing request: %w", err)
+		log.Printf("gfrpc: execute error: %v", err)
+		return nil, fmt.Errorf("upstream service unavailable")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status: %d", resp.StatusCode)
+		log.Printf("gfrpc: unexpected status %d for %s", resp.StatusCode, sourcePath)
+		return nil, fmt.Errorf("upstream service error")
 	}
 
-	rawBody, err := io.ReadAll(resp.Body)
+	rawBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	if err != nil {
-		return nil, fmt.Errorf("reading response: %w", err)
+		log.Printf("gfrpc: read error: %v", err)
+		return nil, fmt.Errorf("upstream service error")
 	}
 
 	results, err := ParseResponse(string(rawBody))
 	if err != nil {
-		return nil, fmt.Errorf("parsing response: %w", err)
+		log.Printf("gfrpc: parse error: %v", err)
+		return nil, fmt.Errorf("data not available")
 	}
 
 	resultMap := make(map[string]json.RawMessage, len(results))
