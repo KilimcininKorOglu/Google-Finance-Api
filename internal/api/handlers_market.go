@@ -34,13 +34,14 @@ func (h *handlers) getMarketIndices(w http.ResponseWriter, r *http.Request) {
 
 func (h *handlers) getMarketMovers(w http.ResponseWriter, r *http.Request) {
 	category := r.URL.Query().Get("category")
-	if category == "" {
+	validCategories := map[string]bool{"most-active": true, "gainers": true, "losers": true}
+	if !validCategories[category] {
 		category = "most-active"
 	}
 
 	count := 10
 	if c := r.URL.Query().Get("count"); c != "" {
-		if parsed, err := strconv.Atoi(c); err == nil && parsed > 0 {
+		if parsed, err := strconv.Atoi(c); err == nil && parsed > 0 && parsed <= 100 {
 			count = parsed
 		}
 	}

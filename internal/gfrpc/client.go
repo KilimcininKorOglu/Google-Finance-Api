@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -35,7 +36,7 @@ func NewClient() *Client {
 func (c *Client) Execute(ctx context.Context, sourcePath string, requests []RPCRequest) (map[string]json.RawMessage, error) {
 	rpcIDs := uniqueRPCIDs(requests)
 	reqURL := fmt.Sprintf("%s?rpcids=%s&source-path=%s&hl=en&gl=us&rt=c",
-		batchExecuteURL, strings.Join(rpcIDs, ","), sourcePath)
+		batchExecuteURL, strings.Join(rpcIDs, ","), url.QueryEscape(sourcePath))
 
 	body := BuildBody(requests)
 

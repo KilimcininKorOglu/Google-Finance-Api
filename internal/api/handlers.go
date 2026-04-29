@@ -29,6 +29,10 @@ func (h *handlers) getQuote(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "ticker is required")
 		return
 	}
+	if err := gfrpc.ValidateTicker(ticker); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid ticker: "+err.Error())
+		return
+	}
 
 	tuple := gfrpc.TickerTuple(ticker)
 	results, err := h.client.FetchTicker(r.Context(), ticker, []gfrpc.RPCRequest{
@@ -58,6 +62,10 @@ func (h *handlers) getCompany(w http.ResponseWriter, r *http.Request) {
 	ticker := r.PathValue("ticker")
 	if ticker == "" {
 		writeError(w, http.StatusBadRequest, "ticker is required")
+		return
+	}
+	if err := gfrpc.ValidateTicker(ticker); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid ticker: "+err.Error())
 		return
 	}
 
@@ -133,6 +141,10 @@ func (h *handlers) getNews(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "ticker is required")
 		return
 	}
+	if err := gfrpc.ValidateTicker(ticker); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid ticker: "+err.Error())
+		return
+	}
 
 	tuple := gfrpc.TickerTuple(ticker)
 	isCrypto := gfrpc.IsCrypto(ticker)
@@ -163,6 +175,10 @@ func (h *handlers) getFinancials(w http.ResponseWriter, r *http.Request) {
 	ticker := r.PathValue("ticker")
 	if ticker == "" {
 		writeError(w, http.StatusBadRequest, "ticker is required")
+		return
+	}
+	if err := gfrpc.ValidateTicker(ticker); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid ticker: "+err.Error())
 		return
 	}
 
@@ -202,6 +218,10 @@ func (h *handlers) getRelated(w http.ResponseWriter, r *http.Request) {
 	ticker := r.PathValue("ticker")
 	if ticker == "" {
 		writeError(w, http.StatusBadRequest, "ticker is required")
+		return
+	}
+	if err := gfrpc.ValidateTicker(ticker); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid ticker: "+err.Error())
 		return
 	}
 
