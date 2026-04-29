@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/kilimcininkoroglu/google-finance-api/internal/gfrpc"
 )
@@ -47,7 +48,11 @@ func NewServer(client *gfrpc.Client, port string, webFS fs.FS) *http.Server {
 	handler = corsMiddleware(handler)
 
 	return &http.Server{
-		Addr:    ":" + port,
-		Handler: handler,
+		Addr:              ":" + port,
+		Handler:           handler,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 }
