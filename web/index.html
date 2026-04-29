@@ -527,17 +527,16 @@
   <div class="container">
 
     <header class="header">
-      <div class="ascii-logo"> ██████╗  ██████╗  ██████╗  ██████╗ ██╗     ███████╗    ███████╗██╗███╗   ██╗ █████╗ ███╗   ██╗ ██████╗███████╗
-██╔════╝ ██╔═══██╗██╔═══██╗██╔════╝ ██║     ██╔════╝    ██╔════╝██║████╗  ██║██╔══██╗████╗  ██║██╔════╝██╔════╝
-██║  ███╗██║   ██║██║   ██║██║  ███╗██║     █████╗      █████╗  ██║██╔██╗ ██║███████║██╔██╗ ██║██║     █████╗
-██║   ██║██║   ██║██║   ██║██║   ██║██║     ██╔══╝      ██╔══╝  ██║██║╚██╗██║██╔══██║██║╚██╗██║██║     ██╔══╝
-╚██████╔╝╚██████╔╝╚██████╔╝╚██████╔╝███████╗███████╗    ██║     ██║██║ ╚████║██║  ██║██║ ╚████║╚██████╗███████╗
- ╚═════╝  ╚═════╝  ╚═════╝  ╚═════╝ ╚══════╝╚══════╝    ╚═╝     ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
-                                                    ── Unofficial REST API ──</div>
+      <div class="ascii-logo"> ██████╗ ██████╗ ██████╗ ██████╗ ██╗ ███████╗ ███████╗██╗███╗ ██╗ █████╗ ███╗ ██╗
+        ██████╗███████╗
+        ██╔════╝ ██╔═══██╗██╔═══██╗██╔════╝ ██║ ██╔════╝ ██╔════╝██║████╗ ██║██╔══██╗████╗ ██║██╔════╝██╔════╝
+        ██║ ███╗██║ ██║██║ ██║██║ ███╗██║ █████╗ █████╗ ██║██╔██╗ ██║███████║██╔██╗ ██║██║ █████╗
+        ██║ ██║██║ ██║██║ ██║██║ ██║██║ ██╔══╝ ██╔══╝ ██║██║╚██╗██║██╔══██║██║╚██╗██║██║ ██╔══╝
+        ╚██████╔╝╚██████╔╝╚██████╔╝╚██████╔╝███████╗███████╗ ██║ ██║██║ ╚████║██║ ██║██║ ╚████║╚██████╗███████╗
+        ╚═════╝ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝ ╚═╝ ╚═╝╚═╝ ╚═══╝╚═╝ ╚═╝╚═╝ ╚═══╝ ╚═════╝╚══════╝
+        ── Unofficial REST API ──</div>
       <div class="header-meta">
-        <span>VERSION <span class="val">1.0.0</span></span>
-        <span>STATUS <span class="val">ONLINE</span></span>
-        <span>DEPS <span class="val">0</span></span>
+        <span>VERSION <span class="val" id="api-version">...</span></span>
         <span>LANG <span class="val">GO</span></span>
         <span class="val blink">_</span>
       </div>
@@ -575,10 +574,6 @@
         <div class="stat-box">
           <div class="stat-val">13</div>
           <div class="stat-label">ENDPOINTS</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-val">0</div>
-          <div class="stat-label">DEPENDENCIES</div>
         </div>
         <div class="stat-box">
           <div class="stat-val">19</div>
@@ -760,7 +755,7 @@
     </section>
 
     <footer class="footer">
-      <span>google-finance-api v1.0.0</span>
+      <span id="footer-version">google-finance-api</span>
       <span><a
           href="https://github.com/KilimcininKorOglu/Google-Finance-Api">github.com/KilimcininKorOglu/Google-Finance-Api</a></span>
       <span>MIT License</span>
@@ -822,6 +817,13 @@
         };
       }
       connectSSE();
+
+      fetch('/healthz').then(r => r.json()).then(d => {
+        if (d.version) {
+          document.getElementById('api-version').textContent = d.version;
+          document.getElementById('footer-version').textContent = 'google-finance-api v' + d.version;
+        }
+      }).catch(() => {});
 
       // Explorer
       const tabs = document.getElementById('explorer-tabs');

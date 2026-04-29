@@ -3,6 +3,7 @@ package api
 import (
 	"io/fs"
 	"net/http"
+	"strings"
 
 	"github.com/kilimcininkoroglu/google-finance-api/internal/gfrpc"
 )
@@ -31,8 +32,13 @@ func NewServer(client *gfrpc.Client, port string, webFS fs.FS) *http.Server {
 	mux.HandleFunc("GET /v1/live", h.liveStream)
 	mux.HandleFunc("GET /v1/live/snapshot", h.sseQuotes)
 
+	version := "unknown"
+	if v, err := fs.ReadFile(webFS, "VERSION"); err == nil {
+		version = strings.TrimSpace(string(v))
+	}
+
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "version": version})
 	})
 
 	var handler http.Handler = mux
