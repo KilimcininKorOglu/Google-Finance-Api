@@ -21,7 +21,9 @@ func main() {
 	}
 
 	client := gfrpc.NewClient()
-	srv := api.NewServer(client, port, web.Content)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	srv := api.NewServer(ctx, client, port, web.Content)
 
 	go func() {
 		log.Printf("server starting on :%s", port)
@@ -35,10 +37,11 @@ func main() {
 	<-quit
 
 	log.Println("shutting down...")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	cancel()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Fatalf("forced shutdown: %v", err)
 	}
 	log.Println("server stopped")

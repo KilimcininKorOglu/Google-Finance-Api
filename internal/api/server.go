@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"io/fs"
 	"net/http"
 	"strings"
@@ -9,8 +10,11 @@ import (
 	"github.com/kilimcininkoroglu/google-finance-api/internal/gfrpc"
 )
 
-func NewServer(client *gfrpc.Client, port string, webFS fs.FS) *http.Server {
-	h := &handlers{client: client}
+func NewServer(ctx context.Context, client *gfrpc.Client, port string, webFS fs.FS) *http.Server {
+	hub := newLiveHub(client)
+	go hub.run(ctx)
+
+	h := &handlers{client: client, hub: hub}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /{$}", webHandler(webFS))

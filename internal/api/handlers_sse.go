@@ -6,10 +6,16 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/kilimcininkoroglu/google-finance-api/internal/decode"
 	"github.com/kilimcininkoroglu/google-finance-api/internal/gfrpc"
+)
+
+var (
+	sseConnections atomic.Int32
+	maxSSEConns    int32 = 50
 )
 
 var liveTickers = []string{
@@ -33,47 +39,40 @@ type liveQuote struct {
 	Type          string  `json:"type"`
 }
 
-func (h *handlers) liveStream(w http.ResponseWriter, r *http.Request) {
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		writeError(w, http.StatusInternalServerError, "streaming not supported")
-		return
+type liveHub struct {
+	client *gfrpc.Client
+	mu     sync.RWMutex
+	quotes []liveQuote
+	notify chan struct{}
+}
+
+func newLiveHub(client *gfrpc.Client) *liveHub {
+	return &liveHub{
+		client: client,
+		notify: make(chan struct{}),
 	}
+}
 
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	sendQuotes := func() {
-		quotes := h.fetchLiveQuotes(r.Context())
-		if len(quotes) == 0 {
-			return
-		}
-		data, err := json.Marshal(quotes)
-		if err != nil {
-			return
-		}
-		fmt.Fprintf(w, "data: %s\n\n", data)
-		flusher.Flush()
-	}
-
-	sendQuotes()
+func (hub *liveHub) run(ctx context.Context) {
+	hub.fetch()
 
 	tick := time.NewTicker(15 * time.Second)
 	defer tick.Stop()
 
 	for {
 		select {
-		case <-r.Context().Done():
+		case <-ctx.Done():
 			return
 		case <-tick.C:
-			sendQuotes()
+			hub.fetch()
 		}
 	}
 }
 
-func (h *handlers) fetchLiveQuotes(ctx context.Context) []liveQuote {
+func (hub *liveHub) fetch() {
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
+	defer cancel()
+
 	var (
 		mu     sync.Mutex
 		wg     sync.WaitGroup
@@ -85,11 +84,11 @@ func (h *handlers) fetchLiveQuotes(ctx context.Context) []liveQuote {
 		go func(t string) {
 			defer wg.Done()
 
-			fetchCtx, cancel := context.WithTimeout(ctx, 8*time.Second)
-			defer cancel()
+			fetchCtx, fetchCancel := context.WithTimeout(ctx, 8*time.Second)
+			defer fetchCancel()
 
 			tuple := gfrpc.TickerTuple(t)
-			results, err := h.client.FetchTicker(fetchCtx, t, []gfrpc.RPCRequest{
+			results, err := hub.client.FetchTicker(fetchCtx, t, []gfrpc.RPCRequest{
 				gfrpc.QuoteRequest(tuple),
 			})
 			if err != nil {
@@ -121,11 +120,72 @@ func (h *handlers) fetchLiveQuotes(ctx context.Context) []liveQuote {
 	}
 
 	wg.Wait()
-	return quotes
+
+	if len(quotes) > 0 {
+		hub.mu.Lock()
+		hub.quotes = quotes
+		hub.mu.Unlock()
+
+		ch := hub.notify
+		hub.notify = make(chan struct{})
+		close(ch)
+	}
+}
+
+func (hub *liveHub) snapshot() []liveQuote {
+	hub.mu.RLock()
+	defer hub.mu.RUnlock()
+	result := make([]liveQuote, len(hub.quotes))
+	copy(result, hub.quotes)
+	return result
+}
+
+func (h *handlers) liveStream(w http.ResponseWriter, r *http.Request) {
+	if sseConnections.Load() >= maxSSEConns {
+		writeError(w, http.StatusServiceUnavailable, "too many live connections")
+		return
+	}
+	sseConnections.Add(1)
+	defer sseConnections.Add(-1)
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		writeError(w, http.StatusInternalServerError, "streaming not supported")
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	send := func() {
+		quotes := h.hub.snapshot()
+		if len(quotes) == 0 {
+			return
+		}
+		data, err := json.Marshal(quotes)
+		if err != nil {
+			return
+		}
+		fmt.Fprintf(w, "data: %s\n\n", data)
+		flusher.Flush()
+	}
+
+	send()
+
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case <-h.hub.notify:
+			send()
+		}
+	}
 }
 
 func (h *handlers) sseQuotes(w http.ResponseWriter, r *http.Request) {
-	quotes := h.fetchLiveQuotes(r.Context())
+	quotes := h.hub.snapshot()
 	if quotes == nil {
 		quotes = []liveQuote{}
 	}

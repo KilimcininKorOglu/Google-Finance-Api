@@ -21,6 +21,7 @@ var chartRangeMap = map[string]int{
 
 type handlers struct {
 	client *gfrpc.Client
+	hub    *liveHub
 }
 
 func (h *handlers) getQuote(w http.ResponseWriter, r *http.Request) {
