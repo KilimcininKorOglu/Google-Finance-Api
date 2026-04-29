@@ -10,9 +10,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /bin/google-finance-ap
 
 FROM alpine:3.20
 
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata && \
+    addgroup -S app && adduser -S -G app app
 
 COPY --from=builder /bin/google-finance-api /usr/local/bin/google-finance-api
+
+USER app
 
 EXPOSE 8080
 
