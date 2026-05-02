@@ -22,6 +22,7 @@ func NewServer(ctx context.Context, client *gfrpc.Client, port string, webFS fs.
 	mux.HandleFunc("GET /robots.txt", staticFileHandler(webFS, "robots.txt", "text/plain; charset=utf-8", "public, max-age=3600"))
 	mux.HandleFunc("GET /sitemap.xml", staticFileHandler(webFS, "sitemap.xml", "application/xml; charset=utf-8", "public, max-age=3600"))
 	mux.HandleFunc("GET /llms.txt", staticFileHandler(webFS, "llms.txt", "text/plain; charset=utf-8", "public, max-age=3600"))
+	mux.HandleFunc("GET /favicon.svg", staticFileHandler(webFS, "favicon.svg", "image/svg+xml", "public, max-age=86400"))
 
 	mux.HandleFunc("GET /v1/quote/{ticker}", h.getQuote)
 	mux.HandleFunc("GET /v1/company/{ticker}", h.getCompany)
